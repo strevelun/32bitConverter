@@ -104,21 +104,20 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
     return TRUE;
 }
 
-
+// 
 
 void SetDib(HWND hWnd)
 {
-    HDC hdc = GetDC(hWnd);
-
+    /*
     DIBitmap dib(hdc, L"image.bmp"); 
     hBitmap32 = dib.Convert24to32(hdc);
     //hBitmap32 = dib.GetOriginalBitmap();
 
-
-
     hMemDC = CreateCompatibleDC(hdc);
     SelectObject(hMemDC, hBitmap32);
-    ReleaseDC(hWnd, hdc);
+    */
+
+
 }
 
 void DestroyDib()
@@ -129,22 +128,16 @@ void DestroyDib()
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    PAINTSTRUCT ps;
-    HDC hdc;
+    static CBitmap bitmap(hWnd, L"image.bmp");
 
     switch (message)
     {
     case WM_CREATE:
-        SetDib(hWnd);
+        //SetDib(hWnd);
         break;
 
     case WM_PAINT:
-        {
-            hdc = BeginPaint(hWnd, &ps);
-            BitBlt(hdc, 0, 0, WIDTH, HEIGHT, hMemDC, 0, 0, SRCCOPY);
-
-            EndPaint(hWnd, &ps);
-        }
+        bitmap.Render(hWnd);
         break;
     case WM_DESTROY:
         PostQuitMessage(0);

@@ -2,8 +2,6 @@
 
 DIBitmap::DIBitmap(HDC hdc, LPCWSTR fileName)
 {
-    PHANDLE hFile = NULL;
-
     if (InitFile(fileName))
     {
         Read24Bitmap(hdc);
@@ -54,7 +52,6 @@ HBITMAP DIBitmap::Convert24to32(HDC hdc)
 
     BITMAP bitmap;
     GetObject(m_bitmap, sizeof(BITMAP), &bitmap);
-
 
     for (int y = 0; y < height; y++)
     {
