@@ -4,14 +4,17 @@
 #include "framework.h"
 #include "Test.h"
 #include <random>
+#include "DIBitmap.h"
+#include "CBitmap.h"
+#include "CDC.h"
 
-#define HEIGHT      500
-#define WIDTH       500
+#define HEIGHT      1000
+#define WIDTH       1000
 
 BITMAPINFO          bmpInfo;
-LPDWORD             lpPixel;
 HBITMAP             hBitmap;
 HDC                 hMemDC;
+HBITMAP hBitmap32;
 
 #define MAX_LOADSTRING 100
 
@@ -24,7 +27,6 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // 기본 창 클래스 이름�
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
                      _In_opt_ HINSTANCE hPrevInstance,
@@ -106,93 +108,23 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 
 void SetDib(HWND hWnd)
 {
-    bmpInfo.bmiHeader.biSize = sizeof(BITMAPINFOHEADER);
-    bmpInfo.bmiHeader.biWidth = WIDTH;
-    bmpInfo.bmiHeader.biHeight = HEIGHT;
-
-    bmpInfo.bmiHeader.biPlanes = 1;
-    bmpInfo.bmiHeader.biBitCount = 24;
-    bmpInfo.bmiHeader.biCompression = BI_RGB;
-
     HDC hdc = GetDC(hWnd);
-    //hBitmap = CreateDIBSection(hdc, &bmpInfo, DIB_RGB_COLORS, (void**)&lpPixel, NULL, 0);
-    //   bmpInfo + pixel data ( width * height * bitCount / 8  )
-    //   0, 0 위치  왼쪽 하단
 
-    HANDLE hFile;
-    hFile = CreateFile(L"image.bmp", GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
-    if (hFile == INVALID_HANDLE_VALUE) return;
+    DIBitmap dib(hdc, L"image.bmp"); 
+    hBitmap32 = dib.Convert24to32(hdc);
+    //hBitmap32 = dib.GetOriginalBitmap();
 
-    BITMAPFILEHEADER bmFileHeader;
-    DWORD dwReadBytes;
 
-    ReadFile(hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwReadBytes, NULL);
 
-    int iBitmapInfoSize = bmFileHeader.bfOffBits - sizeof(BITMAPFILEHEADER);
-    BITMAPINFO* pBitmapInfo = (BITMAPINFO*) new BYTE[iBitmapInfoSize];
-    ReadFile(hFile, (LPVOID)pBitmapInfo, iBitmapInfoSize, &dwReadBytes, NULL);
-
-    LPVOID lpDIBits;
-    HBITMAP hBitmap = CreateDIBSection(hdc, pBitmapInfo, DIB_RGB_COLORS, (void**)&lpPixel, NULL, 0);
-    ReadFile(hFile, lpPixel, pBitmapInfo->bmiHeader.biSizeImage, &dwReadBytes, NULL);
-
-    CloseHandle(hFile);
-
-    LPDWORD lpDestPixel;
-    pBitmapInfo->bmiHeader.biBitCount = 32; 
-    HBITMAP hBitmap2 = CreateDIBSection(hdc, pBitmapInfo, DIB_RGB_COLORS, (void**)&lpDestPixel, NULL, 0);
-
-    int cnt = 0;
-    int loc = 0;
-
-    for (int y = 0; y < HEIGHT; y++)
-    {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            int temp = 0;
-            for (int i = loc + 2; i >= loc; i--)
-            {
-                if (i >= loc + 2)
-                {
-                    temp |= 0xff;
-                    temp <<= 8;
-                }
-                temp |= ((LPBYTE)lpPixel)[i];
-
-                if(i != loc)
-                    temp <<= 8;
-            }
-            (lpDestPixel)[cnt++] = temp;
-            loc += 3;
-        }
-    }
-    
     hMemDC = CreateCompatibleDC(hdc);
-    SelectObject(hMemDC, hBitmap2);
+    SelectObject(hMemDC, hBitmap32);
     ReleaseDC(hWnd, hdc);
 }
 
 void DestroyDib()
 {
     DeleteDC(hMemDC);
-    DeleteObject(hBitmap);
-}
-
-void DrawDib()
-{
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    int random;
-
-    for (int y = HEIGHT - 1 ; y >= 0; y--)
-    {
-        for (int x = 0; x < WIDTH; x++)
-        {
-            std::uniform_int_distribution<int> d1(0, 0x00ffffff - 1);
-            random = d1(gen);
-            lpPixel[(y * WIDTH) + x] = random;
-        }
-    }
+    DeleteObject(hBitmap32);
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -203,31 +135,9 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     switch (message)
     {
     case WM_CREATE:
-        SetTimer(hWnd, 1, 100, NULL);
         SetDib(hWnd);
         break;
 
-    case WM_TIMER:
-       // DrawDib();
-        InvalidateRgn(hWnd, NULL, FALSE);
-        break;
-
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
     case WM_PAINT:
         {
             hdc = BeginPaint(hWnd, &ps);
@@ -237,8 +147,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         }
         break;
     case WM_DESTROY:
-        DestroyDib();
-        KillTimer(hWnd, 1);
         PostQuitMessage(0);
         break;
     default:
@@ -246,23 +154,3 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     }
     return 0;
 }
-
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
-
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
-}
-
