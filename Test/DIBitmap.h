@@ -6,10 +6,10 @@ class DIBitmap
 {
     HBITMAP         m_bitmap;
     HANDLE          m_hFile;
-    BITMAPINFO* pBitmapInfo;
-    LPDWORD hBitmap24;
+    BITMAPINFO*     m_pBitmapInfo;
+    LPDWORD         m_hBitmap24;
 
-    int width, height;
+    int             m_width, m_height;
 
 private:
     bool InitFile(LPCWSTR fileName);
@@ -17,7 +17,7 @@ private:
 
 public:
     DIBitmap(HDC hdc, LPCWSTR fileName);
-    ~DIBitmap() { DeleteObject(pBitmapInfo); }
+    ~DIBitmap() { DeleteObject(m_pBitmapInfo); }
 
     HBITMAP Convert24to32(HDC hdc);
     HBITMAP GetOriginalBitmap() { return m_bitmap; }

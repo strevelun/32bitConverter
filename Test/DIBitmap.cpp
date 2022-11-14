@@ -28,14 +28,14 @@ void DIBitmap::Read24Bitmap(HDC hdc)
     ReadFile(m_hFile, &bmFileHeader, sizeof(BITMAPFILEHEADER), &dwReadBytes, NULL);
 
     int iBitmapInfoSize = bmFileHeader.bfOffBits - sizeof(BITMAPFILEHEADER);
-    pBitmapInfo = (BITMAPINFO*) new BYTE[iBitmapInfoSize];
-    ReadFile(m_hFile, (LPVOID)pBitmapInfo, iBitmapInfoSize, &dwReadBytes, NULL);
+    m_pBitmapInfo = (BITMAPINFO*) new BYTE[iBitmapInfoSize];
+    ReadFile(m_hFile, (LPVOID)m_pBitmapInfo, iBitmapInfoSize, &dwReadBytes, NULL);
 
-    width = pBitmapInfo->bmiHeader.biWidth;
-    height = pBitmapInfo->bmiHeader.biHeight;
+    m_width = m_pBitmapInfo->bmiHeader.biWidth;
+    m_height = m_pBitmapInfo->bmiHeader.biHeight;
 
-    m_bitmap = CreateDIBSection(hdc, pBitmapInfo, DIB_RGB_COLORS, (void**)&hBitmap24, NULL, 0);
-    ReadFile(m_hFile, hBitmap24, pBitmapInfo->bmiHeader.biSizeImage, &dwReadBytes, NULL);
+    m_bitmap = CreateDIBSection(hdc, m_pBitmapInfo, DIB_RGB_COLORS, (void**)&m_hBitmap24, NULL, 0);
+    ReadFile(m_hFile, m_hBitmap24, m_pBitmapInfo->bmiHeader.biSizeImage, &dwReadBytes, NULL);
 
     CloseHandle(m_hFile);
 }
@@ -44,8 +44,8 @@ HBITMAP DIBitmap::Convert24to32(HDC hdc)
 {
     LPDWORD lpDestPixel;
     HBITMAP bitmap32;
-    pBitmapInfo->bmiHeader.biBitCount = 32;
-    bitmap32 = CreateDIBSection(hdc, pBitmapInfo, DIB_RGB_COLORS, (void**)&lpDestPixel, NULL, 0);
+    m_pBitmapInfo->bmiHeader.biBitCount = 32;
+    bitmap32 = CreateDIBSection(hdc, m_pBitmapInfo, DIB_RGB_COLORS, (void**)&lpDestPixel, NULL, 0);
    
     int originCnt = 0;
     int destCnt = 0;
@@ -53,14 +53,14 @@ HBITMAP DIBitmap::Convert24to32(HDC hdc)
     BITMAP bitmap;
     GetObject(m_bitmap, sizeof(BITMAP), &bitmap);
 
-    for (int y = 0; y < height; y++)
+    for (int y = 0; y < m_height; y++)
     {
         originCnt = (y * bitmap.bmWidthBytes);
-        for (int x = 0; x < width; x++)
+        for (int x = 0; x < m_width; x++)
         {
-            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)hBitmap24)[originCnt++];
-            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)hBitmap24)[originCnt++];
-            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)hBitmap24)[originCnt++];
+            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)m_hBitmap24)[originCnt++];
+            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)m_hBitmap24)[originCnt++];
+            ((LPBYTE)lpDestPixel)[destCnt++] = ((LPBYTE)m_hBitmap24)[originCnt++];
             ((LPBYTE)lpDestPixel)[destCnt++] = 0xff;
         }
     }

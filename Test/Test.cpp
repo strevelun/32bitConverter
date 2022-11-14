@@ -132,13 +132,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
     switch (message)
     {
-    case WM_CREATE:
-        //SetDib(hWnd);
-        break;
-
     case WM_PAINT:
-        bitmap.Render(hWnd);
+    {
+        CDC dc = &bitmap;
+        dc.Render(hWnd, 100, 100, 0.5f);
+
         break;
+    }
     case WM_DESTROY:
         PostQuitMessage(0);
         break;
