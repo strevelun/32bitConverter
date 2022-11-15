@@ -6,9 +6,10 @@ class CBitmap
 {
     HBITMAP			m_bitmap;
     HANDLE			m_hFile;
-	long			m_width = 0, m_height = 0;
 	LPDWORD			m_pixels = NULL;
 	HDC				m_hMemDC;
+
+	long			m_width = 0, m_height = 0;
 
 public:
 	CBitmap(HWND hWnd, LPCWSTR fileName);

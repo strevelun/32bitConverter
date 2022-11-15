@@ -134,9 +134,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
     {
     case WM_PAINT:
     {
-        CDC dc = &bitmap;
-        dc.Render(hWnd, 100, 100, 0.5f);
+        PAINTSTRUCT ps;
+        CDC dc = BeginPaint(hWnd, &ps);
 
+        dc.Render(bitmap, 100, 100, 1.5f);
+
+        EndPaint(hWnd, &ps);
         break;
     }
     case WM_DESTROY:

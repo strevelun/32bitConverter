@@ -1,29 +1,16 @@
 #include "CDC.h"
 #include "CBitmap.h"
+#include <math.h>
 
-CDC::CDC(CBitmap* bitmap)
+void CDC::Render(const CBitmap& bitmap)
 {
-	m_bitmap = bitmap;
+	BitBlt(m_hDC, 0, 0, bitmap.GetWidth(), bitmap.GetHeight(), bitmap.GetMemDC(), 0, 0, SRCCOPY);
 }
 
-void CDC::Render(HWND hWnd)
+void CDC::Render(const CBitmap& bitmap, long dx, long dy, float multiple)
 {
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hWnd, &ps);
+	int width = bitmap.GetWidth();
+	int height = bitmap.GetHeight();
 
-	BitBlt(hdc, 0, 0, m_bitmap->GetWidth(), m_bitmap->GetHeight(), m_bitmap->GetMemDC(), 0, 0, SRCCOPY);
-
-	EndPaint(hWnd, &ps);
-}
-
-void CDC::Render(HWND hWnd, long dx, long dy, float multiple)
-{
-	PAINTSTRUCT ps;
-	HDC hdc = BeginPaint(hWnd, &ps);
-	int width = m_bitmap->GetWidth();
-	int height = m_bitmap->GetHeight();
-
-	StretchBlt(hdc, dx, dy, width * multiple, height * multiple, m_bitmap->GetMemDC(), 0, 0, width, height, SRCCOPY);
-
-	EndPaint(hWnd, &ps);
+	StretchBlt(m_hDC, dx, dy, width * multiple, height * multiple, bitmap.GetMemDC(), 0, 0, width, height, SRCCOPY);
 }
